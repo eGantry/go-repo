@@ -30,7 +30,7 @@ func printBoard() {
 	}
 }
 
-// Place a stone on the board
+// Place a stone and check for captures
 func placeStone(x, y int) bool {
 	if x < 0 || x >= size || y < 0 || y >= size {
 		fmt.Println("Invalid move! Out of bounds.")
@@ -40,7 +40,9 @@ func placeStone(x, y int) bool {
 		fmt.Println("Invalid move! Spot is already taken.")
 		return false
 	}
+
 	board[x][y] = currentPlayer
+	checkForCaptures()
 	return true
 }
 
@@ -53,9 +55,57 @@ func switchPlayer() {
 	}
 }
 
+// Check for captured stones and remove them
+func checkForCaptures() {
+	opponent := "B"
+	if currentPlayer == "B" {
+		opponent = "W"
+	}
+
+	// Scan board for groups with no liberties
+	for i := 0; i < size; i++ {
+		for j := 0; j < size; j++ {
+			if board[i][j] == opponent {
+				visited := make(map[[2]int]bool)
+				if !hasLiberty(i, j, opponent, visited) {
+					removeCapturedGroup(visited)
+				}
+			}
+		}
+	}
+}
+
+// Check if a group has a liberty (empty space nearby)
+func hasLiberty(x, y int, color string, visited map[[2]int]bool) bool {
+	if x < 0 || x >= size || y < 0 || y >= size {
+		return false
+	}
+	if board[x][y] == "." {
+		return true
+	}
+	if board[x][y] != color || visited[[2]int{x, y}] {
+		return false
+	}
+
+	visited[[2]int{x, y}] = true
+
+	// Recursively check all connected stones
+	return hasLiberty(x-1, y, color, visited) ||
+		hasLiberty(x+1, y, color, visited) ||
+		hasLiberty(x, y-1, color, visited) ||
+		hasLiberty(x, y+1, color, visited)
+}
+
+// Remove captured stones from the board
+func removeCapturedGroup(visited map[[2]int]bool) {
+	for pos := range visited {
+		board[pos[0]][pos[1]] = "."
+	}
+}
+
 func main() {
 	initBoard()
-	fmt.Println("Simple Go Game (9x9) - No captures yet")
+	fmt.Println("Simple Go Game (9x9) - Now with captures!")
 	printBoard()
 
 	for {
