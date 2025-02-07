@@ -126,21 +126,97 @@ func removeCapturedGroup(visited map[[2]int]bool) {
 	}
 }
 
+// Check for surrounded empty territory and assign points
+func calculateTerritory() (int, int) {
+	visited := make(map[[2]int]bool)
+	blackScore, whiteScore := 0, 0
+
+	for i := 0; i < size; i++ {
+		for j := 0; j < size; j++ {
+			if board[i][j] == "." && !visited[[2]int{i, j}] {
+				territory, owner := identifyTerritory(i, j, visited)
+				if owner == "B" {
+					blackScore += territory
+				} else if owner == "W" {
+					whiteScore += territory
+				}
+			}
+		}
+	}
+	return blackScore, whiteScore
+}
+
+// Identify territory and determine which player (if any) owns it
+func identifyTerritory(x, y int, visited map[[2]int]bool) (int, string) {
+	stack := [][2]int{{x, y}}
+	territory := 0
+	owner := ""
+
+	for len(stack) > 0 {
+		pos := stack[len(stack)-1]
+		stack = stack[:len(stack)-1]
+
+		i, j := pos[0], pos[1]
+		if i < 0 || i >= size || j < 0 || j >= size || visited[[2]int{i, j}] {
+			continue
+		}
+		if board[i][j] == "B" {
+			if owner == "W" {
+				return 0, ""
+			}
+			owner = "B"
+			continue
+		}
+		if board[i][j] == "W" {
+			if owner == "B" {
+				return 0, ""
+			}
+			owner = "W"
+			continue
+		}
+
+		territory++
+		visited[[2]int{i, j}] = true
+		stack = append(stack, [2]int{i - 1, j}, [2]int{i + 1, j}, [2]int{i, j - 1}, [2]int{i, j + 1})
+	}
+
+	return territory, owner
+}
+
+// Check if the game should end
+func checkEndGame() bool {
+	var input string
+	fmt.Print("Do both players pass? (yes/no): ")
+	fmt.Scan(&input)
+	return input == "yes"
+}
+
 func main() {
 	initBoard()
-	fmt.Println("Simple Go Game (9x9) - Now with Ko rule!")
+	fmt.Println("Simple Go Game (9x9) - Now with Scoring!")
 	printBoard()
 
 	for {
 		var x, y int
-		fmt.Printf("Player %s, enter row and column (e.g., '4 5'): ", currentPlayer)
+		fmt.Printf("Player %s, enter row and column (or -1 to pass): ", currentPlayer)
 		_, err := fmt.Scan(&x, &y)
 		if err != nil {
 			fmt.Println("Invalid input! Enter two numbers separated by a space.")
 			continue
 		}
 
-		if placeStone(x, y) {
+		if x == -1 {
+			if checkEndGame() {
+				blackScore, whiteScore := calculateTerritory()
+				fmt.Printf("Final Scores: Black = %d, White = %d\n", blackScore, whiteScore)
+				winner := "Black"
+				if whiteScore > blackScore {
+					winner = "White"
+				}
+				fmt.Printf("Winner: %s!\n", winner)
+				break
+			}
+		} else if placeStone(x, y) {
 			printBoard()
 			switchPlayer()
 		}
