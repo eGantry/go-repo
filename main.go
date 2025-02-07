@@ -2,12 +2,14 @@ package main
 
 import (
 	"fmt"
+	"strings"
 )
 
 const size = 9
 
 var board [size][size]string
 var currentPlayer = "B" // B = Black, W = White
+var previousBoardState string
 
 // Initialize the board
 func initBoard() {
@@ -16,6 +18,7 @@ func initBoard() {
 			board[i][j] = "."
 		}
 	}
+	previousBoardState = boardToString()
 }
 
 // Print the board
@@ -30,7 +33,18 @@ func printBoard() {
 	}
 }
 
-// Place a stone and check for captures
+// Convert board state to a string for comparison
+func boardToString() string {
+	var sb strings.Builder
+	for i := 0; i < size; i++ {
+		for j := 0; j < size; j++ {
+			sb.WriteString(board[i][j])
+		}
+	}
+	return sb.String()
+}
+
+// Place a stone and check for captures (including Ko rule)
 func placeStone(x, y int) bool {
 	if x < 0 || x >= size || y < 0 || y >= size {
 		fmt.Println("Invalid move! Out of bounds.")
@@ -43,6 +57,17 @@ func placeStone(x, y int) bool {
 
 	board[x][y] = currentPlayer
 	checkForCaptures()
+
+	// Check Ko rule: If the new board matches the previous state, undo the move
+	newBoardState := boardToString()
+	if newBoardState == previousBoardState {
+		fmt.Println("Ko rule violated! You cannot immediately recreate the previous board state.")
+		board[x][y] = "." // Undo move
+		return false
+	}
+
+	// Update previous board state for next move
+	previousBoardState = newBoardState
 	return true
 }
 
@@ -62,7 +87,6 @@ func checkForCaptures() {
 		opponent = "W"
 	}
 
-	// Scan board for groups with no liberties
 	for i := 0; i < size; i++ {
 		for j := 0; j < size; j++ {
 			if board[i][j] == opponent {
@@ -89,7 +113,6 @@ func hasLiberty(x, y int, color string, visited map[[2]int]bool) bool {
 
 	visited[[2]int{x, y}] = true
 
-	// Recursively check all connected stones
 	return hasLiberty(x-1, y, color, visited) ||
 		hasLiberty(x+1, y, color, visited) ||
 		hasLiberty(x, y-1, color, visited) ||
@@ -105,7 +128,7 @@ func removeCapturedGroup(visited map[[2]int]bool) {
 
 func main() {
 	initBoard()
-	fmt.Println("Simple Go Game (9x9) - Now with captures!")
+	fmt.Println("Simple Go Game (9x9) - Now with Ko rule!")
 	printBoard()
 
 	for {
