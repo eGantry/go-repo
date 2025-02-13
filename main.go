@@ -66,22 +66,38 @@ func placeStone(x, y int) bool {
 // Draw renders the board and stones
 func (g *Game) Draw(screen *ebiten.Image) {
 	// Set background color (light wood)
-	screen.Fill(color.RGBA{R: 222, G: 184, B: 135, A: 255}) // Light brown
+	screen.Fill(color.RGBA{R: 222, G: 184, B: 135, A: 255}) // Light brown board
 
 	// Draw grid
-	for i := 0; i <= boardSize; i++ {
-		ebitenutil.DrawLine(screen, float64(i*cellSize), 0, float64(i*cellSize), windowSize, color.Black)
-		ebitenutil.DrawLine(screen, 0, float64(i*cellSize), windowSize, float64(i*cellSize), color.Black)
-	}
-
-	// Draw stones
 	for i := 0; i < boardSize; i++ {
 		for j := 0; j < boardSize; j++ {
-			x, y := float64(i*cellSize)+10, float64(j*cellSize)+10
+			ebitenutil.DrawLine(screen, float64(i*cellSize), 0, float64(i*cellSize), windowSize, color.Black)
+			ebitenutil.DrawLine(screen, 0, float64(i*cellSize), windowSize, float64(i*cellSize), color.Black)
+		}
+	}
+
+	// Draw stones as circles
+	for i := 0; i < boardSize; i++ {
+		for j := 0; j < boardSize; j++ {
+			x := float64(i*cellSize) + float64(cellSize)/2
+			y := float64(j*cellSize) + float64(cellSize)/2
+			radius := float64(cellSize) * 0.4 // Slightly smaller than a grid cell
+
 			if board[i][j] == "B" {
-				ebitenutil.DrawRect(screen, x, y, 30, 30, color.Black)
+				drawCircle(screen, x, y, radius, color.Black)
 			} else if board[i][j] == "W" {
-				ebitenutil.DrawRect(screen, x, y, 30, 30, color.White)
+				drawCircle(screen, x, y, radius, color.White)
+			}
+		}
+	}
+}
+
+// Draw a filled circle
+func drawCircle(screen *ebiten.Image, cx, cy, radius float64, col color.Color) {
+	for dy := -radius; dy <= radius; dy++ {
+		for dx := -radius; dx <= radius; dx++ {
+			if dx*dx+dy*dy <= radius*radius {
+				screen.Set(int(cx+dx), int(cy+dy), col)
 			}
 		}
 	}
