@@ -50,7 +50,15 @@ type Game struct{}
 var isPassing bool // Track if a player is attempting to pass
 
 func (g *Game) Update() error {
-	// If player is confirming a pass
+	// If game is over, allow restart
+	if gameOver {
+		if ebiten.IsKeyPressed(ebiten.KeyR) {
+			restartGame()
+		}
+		return nil
+	}
+
+	// Handle pass confirmation
 	if isPassing {
 		if ebiten.IsKeyPressed(ebiten.KeyY) {
 			fmt.Println("Player", currentPlayer, "confirmed pass!")
@@ -131,9 +139,9 @@ func (g *Game) Draw(screen *ebiten.Image) {
 		}
 	}
 
-	// Display score and winner if game is over
+	// Display final score if game is over
 	if gameOver {
-		msg := fmt.Sprintf("Final Score\nBlack: %d  White: %d\n%s", blackScore, whiteScore, winnerText)
+		msg := fmt.Sprintf("Final Score\nBlack: %d  White: %d\n%s\n\nPress R to Restart", blackScore, whiteScore, winnerText)
 		ebitenutil.DebugPrint(screen, msg)
 	}
 }
@@ -276,6 +284,17 @@ func identifyTerritory(x, y int, visited map[[2]int]bool) (int, string) {
 	}
 
 	return territory, owner
+}
+
+// Restart the game by resetting board and variables
+func restartGame() {
+	initBoard()      // Reset board
+	gameOver = false // Remove game-over state
+	passCount = 0    // Reset pass count
+	blackScore, whiteScore = 0, 0
+	winnerText = ""
+	currentPlayer = "B" // Start with Black
+	fmt.Println("Game restarted!")
 }
 
 func main() {
