@@ -20,6 +20,10 @@ var currentPlayer = "B" // B = Black, W = White
 
 var passCount int // Track consecutive passes
 
+var gameOver bool
+var blackScore, whiteScore int
+var winnerText string
+
 // Handle passing turns
 func passTurn() {
 	passCount++
@@ -101,17 +105,15 @@ func placeStone(x, y int) bool {
 	return true
 }
 
-// Draw renders the board and stones
+// Draw renders the board, stones, and score overlay
 func (g *Game) Draw(screen *ebiten.Image) {
-	// Set background color (light wood)
+	// Draw board background
 	screen.Fill(color.RGBA{R: 222, G: 184, B: 135, A: 255}) // Light brown board
 
 	// Draw grid
-	for i := 0; i < boardSize; i++ {
-		for j := 0; j < boardSize; j++ {
-			ebitenutil.DrawLine(screen, float64(i*cellSize), 0, float64(i*cellSize), windowSize, color.Black)
-			ebitenutil.DrawLine(screen, 0, float64(i*cellSize), windowSize, float64(i*cellSize), color.Black)
-		}
+	for i := 0; i <= boardSize; i++ {
+		ebitenutil.DrawLine(screen, float64(i*cellSize), 0, float64(i*cellSize), windowSize, color.Black)
+		ebitenutil.DrawLine(screen, 0, float64(i*cellSize), windowSize, float64(i*cellSize), color.Black)
 	}
 
 	// Draw stones as 3D shaded circles
@@ -119,7 +121,7 @@ func (g *Game) Draw(screen *ebiten.Image) {
 		for j := 0; j < boardSize; j++ {
 			x := float64(i*cellSize) + float64(cellSize)/2
 			y := float64(j*cellSize) + float64(cellSize)/2
-			radius := float64(cellSize) * 0.4 // Slightly smaller than a grid cell
+			radius := float64(cellSize) * 0.4
 
 			if board[i][j] == "B" {
 				drawStone(screen, x, y, radius, color.Black)
@@ -129,6 +131,11 @@ func (g *Game) Draw(screen *ebiten.Image) {
 		}
 	}
 
+	// Display score and winner if game is over
+	if gameOver {
+		msg := fmt.Sprintf("Final Score\nBlack: %d  White: %d\n%s", blackScore, whiteScore, winnerText)
+		ebitenutil.DebugPrint(screen, msg)
+	}
 }
 
 // Draw a shaded, 3D-style stone
@@ -200,20 +207,18 @@ func switchPlayer() {
 }
 
 func calculateFinalScore() {
-	blackScore, whiteScore := calculateTerritory()
-	fmt.Printf("\nFinal Scores:\nBlack: %d\nWhite: %d\n", blackScore, whiteScore)
+	blackScore, whiteScore = calculateTerritory()
 
+	// Determine winner
 	if blackScore > whiteScore {
-		fmt.Println("🏆 Black wins!")
+		winnerText = "🏆 Black Wins!"
 	} else if whiteScore > blackScore {
-		fmt.Println("🏆 White wins!")
+		winnerText = "🏆 White Wins!"
 	} else {
-		fmt.Println("🤝 It's a tie!")
+		winnerText = "🤝 It's a Tie!"
 	}
 
-	// Exit game after scoring
-	ebiten.SetRunnableOnUnfocused(false) // Ensure window closes cleanly
-	log.Fatal("Game Over!")
+	gameOver = true
 }
 
 // Count controlled territory
